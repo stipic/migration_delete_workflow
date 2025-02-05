@@ -1,54 +1,67 @@
-name: Clean Old Migrations
+name: Delete Old Migrations
 
 on:
-  push:
-    branches:
-      - main
   schedule:
-    - cron: '0 0 * * *'  # This schedules the action to run daily at midnight UTC
+    - cron: "0 0 1 * *"  # Runs on the first day of every month at midnight UTC
+  workflow_dispatch:  # Allow manual trigger of the workflow
 
 jobs:
-  clean_migrations:
+  delete-migrations:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Allow the bot to push changes
+      pull-requests: write  # Allow the bot to create PRs
 
     steps:
-    # Step 1: Checkout the repository
-    - name: Checkout repository
-      uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    # Step 2: Set up Git configuration (optional but recommended)
-    - name: Set up Git config
-      run: |
-        git config user.name "github-actions"
-        git config user.email "github-actions@github.com"
+      - name: Set up Git user
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
 
-    # Step 3: Delete old migrations by creating a new branch with today's date
-    - name: Delete old migrations branch
-      run: |
-        BRANCH_NAME="delete-old-migrations-$(date +'%Y%m%d')"
-        git checkout -b $BRANCH_NAME
-        git push origin $BRANCH_NAME
+      - name: Create a new branch for deleting old migrations
+        run: |
+          # Define the branch name
+          BRANCH_NAME="delete-old-migrations-$(date +%Y%m%d)"
+          git checkout -b $BRANCH_NAME origin/main
+          git push --set-upstream origin $BRANCH_NAME
 
-    # Step 4: Optional - Remove old migrations (or other custom steps)
-    - name: Remove old migrations
-      run: |
-        # Your custom script to remove old migrations goes here
-        echo "Removing old migrations"
-        # For example:
-        # find ./migrations -type f -name "*.php" -exec rm {} \;
-    
-    # Step 5: Optional - Push changes (if applicable)
-    - name: Push changes
-      run: |
-        git add .
-        git commit -m "Remove old migrations"
-        git push origin $BRANCH_NAME
+      - name: Delete migrations older than 14 days
+        run: |
+          # Current date
+          CURRENT_DATE=$(date +%s)
 
-    # Step 6: Optional - Create a pull request (if required)
-    - name: Create Pull Request
-      uses: peter-evans/create-pull-request@v3
-      with:
-        title: 'Delete old migrations'
-        body: 'This PR deletes old migrations from the repository.'
-        base: main
-        head: $BRANCH_NAME
+          # Find all migration files and loop through them
+          for file in ./migrations/Version*; do
+            # Extract the timestamp from the filename (e.g., Version20250204093209 -> 20250204093209)
+            FILENAME=$(basename "$file")
+            TIMESTAMP=${FILENAME//[^0-9]/}  # Extract only digits
+            
+            # Convert timestamp to seconds since epoch
+            FILE_DATE=$(date -d "$TIMESTAMP" +%s)
+            
+            # Calculate the age of the file in days
+            AGE=$(( (CURRENT_DATE - FILE_DATE) / 86400 ))
+
+            # Delete file if older than 14 days
+            if [ "$AGE" -gt 14 ]; then
+              echo "Deleting file: $file (Age: $AGE days)"
+              rm "$file"
+            fi
+          done
+
+          # Check if there are changes and commit them
+          git add .
+          git commit -m "Delete old migrations older than 14 days"
+          git push
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v3
+        with:
+          title: "Delete Old Migrations"
+          body: "This PR deletes migration files older than 14 days."
+          base: "main"  # Base branch (main)
+          head: "delete-old-migrations-$(date +%Y%m%d)"  # Explicitly use the branch name
+          draft: false  # You can change this to true if you want the PR to be a draft
