@@ -2,7 +2,7 @@ name: Delete Old Migrations
 
 on:
   schedule:
-    - cron: "0 0 1 * *"
+    - cron: "0 0 1 * *" # jedno mjesecno
   workflow_dispatch:
 
 jobs:
@@ -28,7 +28,7 @@ jobs:
           MIGRATIONS_DELETED=0
           for file in ./migrations/Version*; do
             FILENAME=$(basename "$file")
-            TIMESTAMP=${FILENAME//[^0-9]/}  # Remove non-numeric characters to extract timestamp
+            TIMESTAMP=${FILENAME//[^0-9]/}
             if [[ ! "$TIMESTAMP" =~ ^[0-9]+$ ]]; then
               echo "Skipping invalid timestamp in file: $file"
               continue
