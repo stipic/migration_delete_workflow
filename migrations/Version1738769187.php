@@ -1,0 +1,1 @@
+Ovo mora ostati

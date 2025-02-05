@@ -1,50 +1,60 @@
-name: Delete Old Symfony Migrations
+name: Delete Old Migrations
 
 on:
   schedule:
-    - cron: '0 3 * * 1' # Runs every Monday at 03:00 UTC
-  workflow_dispatch: # Allows manual triggering
+    - cron: "0 0 1 * *"
+  workflow_dispatch:
 
 jobs:
-  clean_migrations:
+  delete-migrations:
     runs-on: ubuntu-latest
-    
+    permissions:
+      contents: write
+      pull-requests: write
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.2' # Adjust as needed
-          extensions: pdo, pdo_mysql
-
-      - name: Find and delete migrations older than 14 days
+      - name: Set up Git user
         run: |
-          find migrations/ -type f -name '*.php' -mtime +14 -delete
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
 
-      - name: Configure Git
+      - name: Delete old migrations
+        id: delete_migrations
         run: |
-          git config --global user.name 'github-actions'
-          git config --global user.email 'github-actions@github.com'
+          CURRENT_DATE=$(date +%s)
+          MIGRATIONS_DELETED=0
+          for file in ./migrations/Version*; do
+            FILENAME=$(basename "$file")
+            TIMESTAMP=${FILENAME//[^0-9]/}  # Remove non-numeric characters to extract timestamp
+            if [[ ! "$TIMESTAMP" =~ ^[0-9]+$ ]]; then
+              echo "Skipping invalid timestamp in file: $file"
+              continue
+            fi
+            FILE_DATE=$TIMESTAMP
+            AGE=$(( (CURRENT_DATE - FILE_DATE) / 86400 ))
+            if [ "$AGE" -gt 14 ]; then
+              rm "$file"
+              MIGRATIONS_DELETED=$((MIGRATIONS_DELETED + 1))
+            fi
+          done
+          echo "migrations_deleted=$MIGRATIONS_DELETED" >> $GITHUB_ENV
 
-      - name: Create a new branch
-        run: |
-          BRANCH_NAME=delete-old-migrations-$(date +%Y%m%d)
-          git checkout -b $BRANCH_NAME
-          git add migrations/
-          if git diff --cached --quiet; then
-            echo "No old migrations to delete. Exiting."
-            exit 0
-          fi
-          git commit -m "Delete Symfony migrations older than 14 days"
-          git push origin $BRANCH_NAME
+      - name: Set branch name
+        run: echo "BRANCH_NAME=delete-old-migrations-$(date +%Y%m%d)" >> $GITHUB_ENV
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          title: "Cleanup: Delete Symfony migrations older than 14 days"
-          body: "This PR automatically deletes Symfony migration files older than 14 days."
-          branch: ${{ github.ref_name }}
-          base: main # Adjust if your default branch is different
+          commit-message: "Delete old migrations older than 14 days"
+          base: main
+          branch: ${{ env.BRANCH_NAME }}
+          title: "[Cleanup] Remove Old Migrations"
+          body: |
+            This pull request removes migration files that are older than 14 days.
+            🧹 Total migrations deleted: ${{ env.migrations_deleted }}
+          draft: false
+          delete-branch: true
