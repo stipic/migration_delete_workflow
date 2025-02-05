@@ -1,0 +1,50 @@
+name: Delete Old Symfony Migrations
+
+on:
+  schedule:
+    - cron: '0 3 * * 1' # Runs every Monday at 03:00 UTC
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  clean_migrations:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2' # Adjust as needed
+          extensions: pdo, pdo_mysql
+
+      - name: Find and delete migrations older than 14 days
+        run: |
+          find migrations/ -type f -name '*.php' -mtime +14 -delete
+
+      - name: Configure Git
+        run: |
+          git config --global user.name 'github-actions'
+          git config --global user.email 'github-actions@github.com'
+
+      - name: Create a new branch
+        run: |
+          BRANCH_NAME=delete-old-migrations-$(date +%Y%m%d)
+          git checkout -b $BRANCH_NAME
+          git add migrations/
+          if git diff --cached --quiet; then
+            echo "No old migrations to delete. Exiting."
+            exit 0
+          fi
+          git commit -m "Delete Symfony migrations older than 14 days"
+          git push origin $BRANCH_NAME
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          title: "Cleanup: Delete Symfony migrations older than 14 days"
+          body: "This PR automatically deletes Symfony migration files older than 14 days."
+          branch: ${{ github.ref_name }}
+          base: main # Adjust if your default branch is different
