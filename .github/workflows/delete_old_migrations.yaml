@@ -2,7 +2,7 @@ name: Delete Old Migrations and Open PR
 
 on:
   schedule:
-    - cron: '0 0 1 * *' # This runs at midnight on the first day of every month
+    - cron: '0 0 1 * *' # Runs at midnight on the first day of every month
   workflow_dispatch: # Allow manual triggering as well
 
 jobs:
@@ -24,24 +24,14 @@ jobs:
         BRANCH_NAME=delete-old-migrations-$(date +%Y%m%d)
         echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
 
-    - name: Create new branch locally
+    - name: Create a new branch based on main
       run: |
-        # Fetch all remote references to ensure we're up-to-date
-        git fetch --all
-
-        # Check if the branch exists on the remote
-        git ls-remote --heads origin $BRANCH_NAME
-        if [ $? -eq 0 ]; then
-          echo "Branch $BRANCH_NAME already exists on remote. Exiting."
-          exit 0
-        fi
-
-        # Checkout a new branch based on the latest main branch
+        git fetch origin main
         git checkout -b $BRANCH_NAME origin/main
+        git push --set-upstream origin $BRANCH_NAME
 
     - name: Delete old migration files (older than 14 days)
       run: |
-        # Find and delete migration files older than 14 days
         find migrations/ -type f -name "*.php" -mtime +14 -exec rm {} \;
 
     - name: Stage and commit changes
@@ -55,7 +45,7 @@ jobs:
 
     - name: Push the new branch to remote
       run: |
-        git push --set-upstream origin $BRANCH_NAME
+        git push origin $BRANCH_NAME
 
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v4
