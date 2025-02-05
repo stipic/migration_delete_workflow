@@ -21,39 +21,45 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
 
-      - name: Define branch name
-        run: |
-          BRANCH_NAME="delete-old-migrations-$(date +%Y%m%d)"
-          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV  # Set the environment variable
-
       - name: Create a new branch for deleting old migrations
         run: |
-          git fetch origin
+          # Define the branch name
+          BRANCH_NAME="delete-old-migrations-$(date +%Y%m%d)"
           git checkout -b $BRANCH_NAME origin/main
           git push --set-upstream origin $BRANCH_NAME
 
       - name: Delete migrations older than 14 days
         run: |
+          # Current date
           CURRENT_DATE=$(date +%s)
+
+          # Find all migration files and loop through them
           for file in ./migrations/Version*; do
+            # Extract the timestamp from the filename (e.g., Version20250204093209 -> 20250204093209)
             FILENAME=$(basename "$file")
-            TIMESTAMP=${FILENAME//[^0-9]/}
+            TIMESTAMP=${FILENAME//[^0-9]/}  # Extract only digits
+            
+            # Convert timestamp to seconds since epoch
             FILE_DATE=$(date -d "$TIMESTAMP" +%s)
+            
+            # Calculate the age of the file in days
             AGE=$(( (CURRENT_DATE - FILE_DATE) / 86400 ))
 
+            # Delete file if older than 14 days
             if [ "$AGE" -gt 14 ]; then
               echo "Deleting file: $file (Age: $AGE days)"
               rm "$file"
             fi
           done
 
+          # Check if there are changes and commit them
           git add .
           git commit -m "Delete old migrations older than 14 days"
           git push
 
       - name: Debug: Check branch status
         run: |
-          echo "Checking branch details"
+          echo "Checking out to the correct branch"
           git branch -a
           git remote -v
           git log -n 5
@@ -65,5 +71,5 @@ jobs:
           title: "Delete Old Migrations"
           body: "This PR deletes migration files older than 14 days."
           base: "main"  # Base branch (main)
-          head: ${{ env.BRANCH_NAME }}  # Use the environment variable for the branch name
-          draft: false  # Change to `true` if you want the PR to be a draft
+          head: "delete-old-migrations-$(date +%Y%m%d)"  # Explicitly use the branch name
+          draft: false  # You can change this to `true` if you want the PR to be a draft
