@@ -63,5 +63,5 @@ jobs:
           title: "Delete Old Migrations"
           body: "This PR deletes migration files older than 14 days."
           base: "main"  # Base branch (main)
-          head: ${{ github.head_ref }}  # This refers to the branch we just created
+          head: "delete-old-migrations-$(date +%Y%m%d)"  # Explicitly use the branch name
           draft: false  # You can change this to `true` if you want the PR to be a draft
