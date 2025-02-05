@@ -56,6 +56,5 @@ jobs:
           body: |
             This pull request removes migration files that are older than 14 days.
             🧹 Total migrations deleted: ${{ env.migrations_deleted }}
-            - Files older than 14 days were deleted to keep the repository clean and up-to-date.
           draft: false
           delete-branch: true
