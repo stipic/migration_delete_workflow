@@ -30,7 +30,6 @@ jobs:
             FILE_DATE=$(date -d "$TIMESTAMP" +%s)
             AGE=$(( (CURRENT_DATE - FILE_DATE) / 86400 ))
             if [ "$AGE" -gt 14 ]; then
-              echo "Deleting file: $file (Age: $AGE days)"
               rm "$file"
             fi
           done
@@ -43,11 +42,8 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "Delete old migrations older than 14 days"
-          committer: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
-          author: ${{ github.actor }} <${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com>
-          signoff: false
-          base: main  # The branch you're merging into
-          branch: ${{ env.BRANCH_NAME }}  # The dynamically generated branch name
+          base: main
+          branch: ${{ env.BRANCH_NAME }}
           title: "Delete Old Migrations"
           body: |
             This pull request deletes migration files older than 14 days.
