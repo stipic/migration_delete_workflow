@@ -57,12 +57,12 @@ jobs:
           git commit -m "Delete old migrations older than 14 days"
           git push
 
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v3
-        with:
-          title: "Delete Old Migrations"
-          body: "This PR deletes migration files older than 14 days."
-          branch: "delete-old-migrations-20250205"
-          base: "main"
+#      - name: Create Pull Request
+#        uses: peter-evans/create-pull-request@v3
+#        with:
+#          title: "Delete Old Migrations"
+#          body: "This PR deletes migration files older than 14 days."
+#          branch: "delete-old-migrations-20250205"
+#          base: "main"
           #branch: "delete-old-migrations-$(date +%Y%m%d)"
-          draft: false
+#          draft: false
