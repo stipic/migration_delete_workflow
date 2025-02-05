@@ -38,6 +38,7 @@ jobs:
         id: create_branch
         run: |
           BRANCH_NAME=delete-old-migrations-$(date +%Y%m%d)
+          echo "Creating branch: $BRANCH_NAME"
           git checkout -b $BRANCH_NAME
           git add migrations/
           if git diff --cached --quiet; then
@@ -45,8 +46,20 @@ jobs:
             exit 0
           fi
           git commit -m "Delete Symfony migrations older than 14 days"
+          echo "Pushing branch: $BRANCH_NAME"
           git push --set-upstream origin $BRANCH_NAME
-          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+
+      - name: Verify branch existence on remote
+        run: |
+          BRANCH_NAME=${{ steps.create_branch.outputs.branch_name }}
+          echo "Checking if branch $BRANCH_NAME exists on remote..."
+          git fetch origin
+          if git branch -r | grep -q "origin/$BRANCH_NAME"; then
+            echo "Branch $BRANCH_NAME exists on remote."
+          else
+            echo "Branch $BRANCH_NAME does NOT exist on remote!"
+            exit 1
+          fi
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
@@ -55,4 +68,4 @@ jobs:
           title: "Cleanup: Delete Symfony migrations older than 14 days"
           body: "This PR automatically deletes Symfony migration files older than 14 days."
           branch: ${{ steps.create_branch.outputs.branch_name }}
-          base: main # Ensure 'main' is your default branch
+          base: main
