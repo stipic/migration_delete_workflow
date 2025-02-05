@@ -1,71 +1,61 @@
-name: Delete Old Symfony Migrations
+name: Create and Push Branch
 
 on:
-  schedule:
-    - cron: '0 3 * * 1' # Runs every Monday at 03:00 UTC
-  workflow_dispatch: # Allows manual triggering
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
-  clean_migrations:
+  create-push-branch:
     runs-on: ubuntu-latest
-    
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-      - name: Set up PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.2' # Adjust as needed
-          extensions: pdo, pdo_mysql
+    - name: Set up PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+        extensions: pdo, pdo_mysql
 
-      - name: Fetch latest changes
-        run: git fetch --all
+    - name: Create a new branch and push to remote
+      id: create_branch
+      run: |
+        # Set the branch name based on the current date
+        BRANCH_NAME=delete-old-migrations-$(date +%Y%m%d)
 
-      - name: Switch to main branch
-        run: git checkout main
+        # Ensure all remote references are up-to-date
+        git fetch --all
 
-      - name: Find and delete migrations older than 14 days
-        run: |
-          find migrations/ -type f -name '*.php' -mtime +14 -delete
+        # Check if the branch already exists on the remote
+        git ls-remote --heads origin $BRANCH_NAME
+        if [ $? -eq 0 ]; then
+          echo "Branch $BRANCH_NAME already exists on remote. Skipping creation."
+          exit 0
+        fi
 
-      - name: Configure Git
-        run: |
-          git config --global user.name 'github-actions'
-          git config --global user.email 'github-actions@github.com'
+        # Create a new branch locally
+        git checkout -b $BRANCH_NAME
 
-      - name: Create and push a new branch
-        id: create_branch
-        run: |
-          BRANCH_NAME=delete-old-migrations-$(date +%Y%m%d)
-          echo "Creating new branch: $BRANCH_NAME"
-          git checkout -b $BRANCH_NAME
-          git add migrations/
-          if git diff --cached --quiet; then
-            echo "No old migrations to delete. Exiting."
-            exit 0
-          fi
-          git commit -m "Delete Symfony migrations older than 14 days"
-          echo "Pushing branch $BRANCH_NAME to remote"
-          git push --set-upstream origin $BRANCH_NAME
+        # Stage any changes (e.g., migration deletions)
+        git add migrations/
 
-      - name: Check if branch exists on remote
-        run: |
-          BRANCH_NAME=delete-old-migrations-$(date +%Y%m%d)
-          echo "Checking if branch $BRANCH_NAME exists on remote..."
-          git fetch origin
-          if git show-ref --verify --quiet refs/remotes/origin/$BRANCH_NAME; then
-            echo "Branch $BRANCH_NAME exists on remote."
-          else
-            echo "Branch $BRANCH_NAME does NOT exist on remote!"
-            exit 1
-          fi
+        # If no changes, exit early
+        if git diff --cached --quiet; then
+          echo "No old migrations to delete. Exiting."
+          exit 0
+        fi
 
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          title: "Cleanup: Delete Symfony migrations older than 14 days"
-          body: "This PR automatically deletes Symfony migration files older than 14 days."
-          branch: ${{ steps.create_branch.outputs.branch_name }}
-          base: main
+        # Commit the changes
+        git commit -m "Delete Symfony migrations older than 14 days"
+
+        # Push the new branch to the remote repository
+        git push --set-upstream origin $BRANCH_NAME
+
+        # Output the branch name for later use
+        echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+
+    - name: Confirm Branch Creation
+      run: echo "Branch ${{ steps.create_branch.outputs.branch_name }} created and pushed successfully."
