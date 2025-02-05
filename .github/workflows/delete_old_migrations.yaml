@@ -22,8 +22,10 @@ jobs:
           git config --global user.name "github-actions[bot]"
 
       - name: Delete old migrations
+        id: delete_migrations
         run: |
           CURRENT_DATE=$(date +%s)
+          MIGRATIONS_DELETED=0
           for file in ./migrations/Version*; do
             FILENAME=$(basename "$file")
             TIMESTAMP=${FILENAME//[^0-9]/}
@@ -31,8 +33,10 @@ jobs:
             AGE=$(( (CURRENT_DATE - FILE_DATE) / 86400 ))
             if [ "$AGE" -gt 14 ]; then
               rm "$file"
+              MIGRATIONS_DELETED=$((MIGRATIONS_DELETED + 1))
             fi
           done
+          echo "migrations_deleted=$MIGRATIONS_DELETED" >> $GITHUB_ENV
 
       - name: Set branch name
         run: echo "BRANCH_NAME=delete-old-migrations-$(date +%Y%m%d)" >> $GITHUB_ENV
@@ -44,8 +48,10 @@ jobs:
           commit-message: "Delete old migrations older than 14 days"
           base: main
           branch: ${{ env.BRANCH_NAME }}
-          title: "Delete Old Migrations"
+          title: "🗑️ Delete Old Migrations - $(date +%Y-%m-%d)"
           body: |
-            This pull request deletes migration files older than 14 days.
+            This pull request removes migration files that are older than 14 days.
+            🧹 Total migrations deleted: ${{ env.migrations_deleted }}
+            - Files older than 14 days were deleted to keep the repository clean and up-to-date.
           draft: false
           delete-branch: true
