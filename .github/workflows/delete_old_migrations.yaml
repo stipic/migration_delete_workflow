@@ -22,14 +22,17 @@ jobs:
           git config --global user.name "github-actions[bot]"
 
       - name: Create a new branch for deleting old migrations
+        id: create_branch
         run: |
           # Define the branch name
           BRANCH_NAME="delete-old-migrations-$(date +%Y%m%d)"
+          echo "Branch Name: $BRANCH_NAME"
           git checkout main
           git reset --hard origin/main
           git checkout -b $BRANCH_NAME
           git rebase main
           git push --set-upstream origin $BRANCH_NAME
+          echo "::set-output name=branch_name::$BRANCH_NAME"
 
       - name: Delete migrations older than 14 days
         run: |
@@ -66,5 +69,5 @@ jobs:
           title: "Delete Old Migrations"
           body: "This PR deletes migration files older than 14 days."
           base: "main"  # Base branch (main)
-          head: "delete-old-migrations-$(date +%Y%m%d)"  # Explicitly use the branch name
+          head: ${{ steps.create_branch.outputs.branch_name }}  # Use the branch name from the previous step
           draft: false  # You can change this to true if you want the PR to be a draft
