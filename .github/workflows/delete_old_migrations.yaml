@@ -21,10 +21,14 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
 
+      - name: Define branch name
+        run: |
+          # Define the branch name variable
+          export BRANCH_NAME="delete-old-migrations-$(date +%Y%m%d)"
+          echo "Branch name is $BRANCH_NAME"
+        
       - name: Create a new branch for deleting old migrations
         run: |
-          # Define the branch name
-          BRANCH_NAME="delete-old-migrations-$(date +%Y%m%d)"
           git checkout -b $BRANCH_NAME origin/main
           git push --set-upstream origin $BRANCH_NAME
 
@@ -57,11 +61,19 @@ jobs:
           git commit -m "Delete old migrations older than 14 days"
           git push
 
+      - name: Debug: Check branch status
+        run: |
+          echo "Checking out to the correct branch"
+          git branch -a
+          git remote -v
+          git log -n 5
+          git status
+
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v3
         with:
           title: "Delete Old Migrations"
           body: "This PR deletes migration files older than 14 days."
           base: "main"  # Base branch (main)
-          head: "delete-old-migrations-$(date +%Y%m%d)"  # Explicitly use the branch name
+          head: ${{ env.BRANCH_NAME }}  # Use the defined branch name variable
           draft: false  # You can change this to `true` if you want the PR to be a draft
