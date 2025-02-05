@@ -21,18 +21,7 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
 
-      - name: Create a new branch for deleting old migrations
-        id: create_branch
-        run: |
-          BRANCH_NAME="delete-old-migrations-$(date +%Y%m%d)"
-          echo "Branch Name: $BRANCH_NAME"
-          git checkout main
-          git pull origin main
-          git checkout -b $BRANCH_NAME
-          git push --set-upstream origin $BRANCH_NAME
-          echo "branch_name=$BRANCH_NAME" >> $GITHUB_ENV
-
-      - name: Delete Old Migrations
+      - name: Delete old migrations
         run: |
           CURRENT_DATE=$(date +%s)
           for file in ./migrations/Version*; do
@@ -45,9 +34,6 @@ jobs:
               rm "$file"
             fi
           done
-          git add .
-          git commit -m "Delete old migrations older than 14 days"
-          git push
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v7
@@ -57,9 +43,10 @@ jobs:
           committer: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
           author: ${{ github.actor }} <${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com>
           signoff: false
-          branch: "delete-old-migrations-20250205"
-          delete-branch: true
+          base: main  # The branch you're merging into
+          branch: delete-old-migrations-$(date +%Y%m%d)  # The new branch name for the PR
           title: "Delete Old Migrations"
           body: |
             This pull request deletes migration files older than 14 days.
           draft: false
+          delete-branch: true
