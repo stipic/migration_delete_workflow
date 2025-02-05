@@ -32,6 +32,11 @@ jobs:
       - name: Delete migrations older than 14 days
         run: |
           CURRENT_DATE=$(date +%s)
+          echo "Current date: $CURRENT_DATE"
+
+          # Check files before deletion
+          echo "Files before deletion:"
+          ls -l ./migrations/Version*
 
           for file in ./migrations/Version*; do
             FILENAME=$(basename "$file")
@@ -45,9 +50,17 @@ jobs:
             fi
           done
 
+          # Check files after deletion
+          echo "Files after deletion:"
+          ls -l ./migrations/Version*
+
+          # Stage changes, commit and push
           git add .
+          git status
           git commit -m "Delete old migrations older than 14 days"
-          git push
+          
+          # Force push to ensure the branch is updated
+          git push --force
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v3
