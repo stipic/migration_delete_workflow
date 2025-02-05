@@ -23,7 +23,7 @@ jobs:
 
       - name: Define branch name
         run: |
-          export BRANCH_NAME="delete-old-migrations-$(date +%Y%m%d)"
+          BRANCH_NAME="delete-old-migrations-$(date +%Y%m%d)"
           echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV  # Set the environment variable
 
       - name: Create a new branch for deleting old migrations
