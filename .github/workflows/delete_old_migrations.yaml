@@ -29,6 +29,7 @@ jobs:
           git config --global user.email 'github-actions@github.com'
 
       - name: Create a new branch
+        id: create_branch
         run: |
           BRANCH_NAME=delete-old-migrations-$(date +%Y%m%d)
           git checkout -b $BRANCH_NAME
@@ -39,6 +40,7 @@ jobs:
           fi
           git commit -m "Delete Symfony migrations older than 14 days"
           git push origin $BRANCH_NAME
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
@@ -46,5 +48,5 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           title: "Cleanup: Delete Symfony migrations older than 14 days"
           body: "This PR automatically deletes Symfony migration files older than 14 days."
-          head: ${{ steps.create_branch.outputs.BRANCH_NAME }}
+          branch: ${{ steps.create_branch.outputs.branch_name }}
           base: main # Ensure 'main' is your default branch
