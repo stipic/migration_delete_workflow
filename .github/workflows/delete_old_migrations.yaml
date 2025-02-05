@@ -32,23 +32,6 @@ jobs:
           git push --set-upstream origin $BRANCH_NAME
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_ENV
 
-      - name: Delete migrations older than 14 days
-        run: |
-          CURRENT_DATE=$(date +%s)
-          for file in ./migrations/Version*; do
-            FILENAME=$(basename "$file")
-            TIMESTAMP=${FILENAME//[^0-9]/}
-            FILE_DATE=$(date -d "$TIMESTAMP" +%s)
-            AGE=$(( (CURRENT_DATE - FILE_DATE) / 86400 ))
-            if [ "$AGE" -gt 14 ]; then
-              echo "Deleting file: $file (Age: $AGE days)"
-              rm "$file"
-            fi
-          done
-          git add .
-          git commit -m "Delete old migrations older than 14 days"
-          git push
-
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v3
         with:
@@ -57,3 +40,22 @@ jobs:
           base: "main"
           branch: ${{ env.branch_name }}
           draft: false
+          commit-message: |
+            Delete migration files older than 14 days
+            - Migrations older than 14 days were deleted.
+          actions: |
+            # Delete migrations older than 14 days
+            CURRENT_DATE=$(date +%s)
+            for file in ./migrations/Version*; do
+              FILENAME=$(basename "$file")
+              TIMESTAMP=${FILENAME//[^0-9]/}
+              FILE_DATE=$(date -d "$TIMESTAMP" +%s)
+              AGE=$(( (CURRENT_DATE - FILE_DATE) / 86400 ))
+              if [ "$AGE" -gt 14 ]; then
+                echo "Deleting file: $file (Age: $AGE days)"
+                rm "$file"
+              fi
+            done
+            git add .
+            git commit -m "Delete old migrations older than 14 days"
+            git push
