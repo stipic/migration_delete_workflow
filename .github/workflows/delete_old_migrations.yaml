@@ -19,6 +19,12 @@ jobs:
           php-version: '8.2' # Adjust as needed
           extensions: pdo, pdo_mysql
 
+      - name: Fetch latest changes
+        run: git fetch --all
+
+      - name: Switch to main branch
+        run: git checkout main
+
       - name: Find and delete migrations older than 14 days
         run: |
           find migrations/ -type f -name '*.php' -mtime +14 -delete
@@ -39,7 +45,7 @@ jobs:
             exit 0
           fi
           git commit -m "Delete Symfony migrations older than 14 days"
-          git push origin $BRANCH_NAME
+          git push --force origin $BRANCH_NAME
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
 
       - name: Create Pull Request
