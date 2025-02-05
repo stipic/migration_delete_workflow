@@ -63,8 +63,14 @@ jobs:
             echo "No changes detected, skipping commit and push."
           fi
 
+      - name: Debug PR Creation
+        run: |
+          echo "Branch name for PR: ${{ env.BRANCH_NAME }}"
+          echo "Checking if changes were made..."
+          git diff --stat origin/main...$BRANCH_NAME
+
       - name: Create Pull Request
-        if: success() && steps.delete-migrations.outputs.CHANGES_DETECTED == 'true'
+        if: success()
         uses: peter-evans/create-pull-request@v3
         with:
           title: "Delete Old Migrations"
