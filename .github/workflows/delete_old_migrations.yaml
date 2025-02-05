@@ -1,13 +1,12 @@
-name: Create and Push Branch
+name: Delete Old Migrations and Open PR
 
 on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
+  schedule:
+    - cron: '0 0 1 * *' # This runs at midnight on the first day of every month
+  workflow_dispatch: # Allow manual triggering as well
 
 jobs:
-  create-push-branch:
+  delete-migrations:
     runs-on: ubuntu-latest
 
     steps:
@@ -20,42 +19,49 @@ jobs:
         php-version: '8.2'
         extensions: pdo, pdo_mysql
 
-    - name: Create a new branch and push to remote
-      id: create_branch
+    - name: Set the branch name
       run: |
-        # Set the branch name based on the current date
         BRANCH_NAME=delete-old-migrations-$(date +%Y%m%d)
+        echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
 
-        # Ensure all remote references are up-to-date
+    - name: Create new branch locally
+      run: |
+        # Fetch all remote references to ensure we're up-to-date
         git fetch --all
 
-        # Check if the branch already exists on the remote
+        # Check if the branch exists on the remote
         git ls-remote --heads origin $BRANCH_NAME
         if [ $? -eq 0 ]; then
-          echo "Branch $BRANCH_NAME already exists on remote. Skipping creation."
+          echo "Branch $BRANCH_NAME already exists on remote. Exiting."
           exit 0
         fi
 
-        # Create a new branch locally
-        git checkout -b $BRANCH_NAME
+        # Checkout a new branch based on the latest main branch
+        git checkout -b $BRANCH_NAME origin/main
 
-        # Stage any changes (e.g., migration deletions)
+    - name: Delete old migration files (older than 14 days)
+      run: |
+        # Find and delete migration files older than 14 days
+        find migrations/ -type f -name "*.php" -mtime +14 -exec rm {} \;
+
+    - name: Stage and commit changes
+      run: |
         git add migrations/
-
-        # If no changes, exit early
         if git diff --cached --quiet; then
-          echo "No old migrations to delete. Exiting."
+          echo "No migrations to delete. Exiting."
           exit 0
         fi
+        git commit -m "Delete migrations older than 14 days"
 
-        # Commit the changes
-        git commit -m "Delete Symfony migrations older than 14 days"
-
-        # Push the new branch to the remote repository
+    - name: Push the new branch to remote
+      run: |
         git push --set-upstream origin $BRANCH_NAME
 
-        # Output the branch name for later use
-        echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
-
-    - name: Confirm Branch Creation
-      run: echo "Branch ${{ steps.create_branch.outputs.branch_name }} created and pushed successfully."
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v4
+      with:
+        title: "Delete Old Migrations"
+        body: "This PR deletes migration files older than 14 days."
+        head: $BRANCH_NAME
+        base: main
+        draft: false
