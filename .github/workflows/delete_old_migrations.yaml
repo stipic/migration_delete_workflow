@@ -49,12 +49,13 @@ jobs:
           echo "Pushing branch: $BRANCH_NAME"
           git push --set-upstream origin $BRANCH_NAME
 
-      - name: Verify branch existence on remote
+      - name: Ensure branch exists on remote
         run: |
           BRANCH_NAME=${{ steps.create_branch.outputs.branch_name }}
           echo "Checking if branch $BRANCH_NAME exists on remote..."
           git fetch origin
-          if git branch -r | grep -q "origin/$BRANCH_NAME"; then
+          git branch -r
+          if git show-ref --verify --quiet refs/remotes/origin/$BRANCH_NAME; then
             echo "Branch $BRANCH_NAME exists on remote."
           else
             echo "Branch $BRANCH_NAME does NOT exist on remote!"
