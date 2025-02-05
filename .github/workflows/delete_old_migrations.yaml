@@ -57,7 +57,7 @@ jobs:
           committer: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
           author: ${{ github.actor }} <${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com>
           signoff: false
-          branch: ${{ env.branch_name }}
+          branch: "delete-old-migrations-20250205"
           delete-branch: true
           title: "Delete Old Migrations"
           body: |
