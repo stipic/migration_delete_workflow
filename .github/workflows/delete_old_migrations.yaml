@@ -2,15 +2,15 @@ name: Delete Old Migrations
 
 on:
   schedule:
-    - cron: "0 0 1 * *"  # Runs on the first day of every month at midnight UTC
-  workflow_dispatch:  # Allow manual trigger of the workflow
+    - cron: "0 0 1 * *"
+  workflow_dispatch:
 
 jobs:
   delete-migrations:
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # Allow the bot to push changes
-      pull-requests: write  # Allow the bot to create PRs
+      contents: write
+      pull-requests: write
 
     steps:
       - name: Checkout repository
@@ -52,5 +52,5 @@ jobs:
           title: "Delete Old Migrations"
           body: "This PR deletes migration files older than 14 days."
           base: "main"
-          head: ${{ github.ref_name }}
+          branch: ${{ github.ref_name }}
           draft: false
