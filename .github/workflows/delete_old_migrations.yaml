@@ -50,10 +50,6 @@ jobs:
             fi
           done
 
-          # Check files after deletion
-          echo "Files after deletion:"
-          ls -l ./migrations/Version*
-
           # Stage changes, commit and push
           git add .
           git status
