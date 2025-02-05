@@ -46,12 +46,11 @@ jobs:
             exit 0
           fi
           git commit -m "Delete Symfony migrations older than 14 days"
-          echo "Pushing branch: $BRANCH_NAME"
           git push --set-upstream origin $BRANCH_NAME
 
       - name: Ensure branch exists on remote
         run: |
-          BRANCH_NAME=${{ steps.create_branch.outputs.branch_name }}
+          BRANCH_NAME=delete-old-migrations-$(date +%Y%m%d)
           echo "Checking if branch $BRANCH_NAME exists on remote..."
           git fetch origin
           git branch -r
