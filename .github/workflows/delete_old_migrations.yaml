@@ -24,8 +24,10 @@ jobs:
       - name: Create a new branch for deleting old migrations
         run: |
           BRANCH_NAME="delete-old-migrations-$(date +%Y%m%d)"
+          echo "Branch name: $BRANCH_NAME"
           git checkout -b $BRANCH_NAME origin/main
           git push --set-upstream origin $BRANCH_NAME
+          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
 
       - name: Delete migrations older than 14 days
         run: |
@@ -52,6 +54,6 @@ jobs:
         with:
           title: "Delete Old Migrations"
           body: "This PR deletes migration files older than 14 days."
-          branch: "delete-old-migrations-$(date +%Y%m%d)"
+          branch: ${{ env.BRANCH_NAME }}
           base: "main"
           draft: false
