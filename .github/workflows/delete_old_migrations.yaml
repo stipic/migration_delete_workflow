@@ -27,7 +27,7 @@ jobs:
           BRANCH_NAME="delete-old-migrations-$(date +%Y%m%d)"
           echo "Branch Name: $BRANCH_NAME"
           git checkout main
-          git reset --hard origin/main
+          git pull origin main
           git checkout -b $BRANCH_NAME
           git push --set-upstream origin $BRANCH_NAME
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_ENV
