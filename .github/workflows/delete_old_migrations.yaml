@@ -48,10 +48,9 @@ jobs:
           commit-message: "Delete old migrations older than 14 days"
           base: main
           branch: ${{ env.BRANCH_NAME }}
-          title: "🗑️ Delete Old Migrations - $(date +%Y-%m-%d)"
+          title: "[Cleanup] Remove Old Migrations"
           body: |
             This pull request removes migration files that are older than 14 days.
             🧹 Total migrations deleted: ${{ env.migrations_deleted }}
-            - Files older than 14 days were deleted to keep the repository clean and up-to-date.
           draft: false
           delete-branch: true
