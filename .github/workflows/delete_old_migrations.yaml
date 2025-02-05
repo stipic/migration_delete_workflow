@@ -34,11 +34,11 @@ jobs:
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
 
-      - name: Create a new branch and push to remote
+      - name: Create a new branch
         id: create_branch
         run: |
           BRANCH_NAME=delete-old-migrations-$(date +%Y%m%d)
-          echo "Creating and pushing branch: $BRANCH_NAME"
+          echo "Creating new branch: $BRANCH_NAME"
           git checkout -b $BRANCH_NAME
           git add migrations/
           if git diff --cached --quiet; then
@@ -46,9 +46,10 @@ jobs:
             exit 0
           fi
           git commit -m "Delete Symfony migrations older than 14 days"
-          git push --set-upstream origin $BRANCH_NAME
+          echo "Pushing branch $BRANCH_NAME to remote"
+          git push origin $BRANCH_NAME
 
-      - name: Ensure branch exists on remote
+      - name: Check if branch exists on remote
         run: |
           BRANCH_NAME=delete-old-migrations-$(date +%Y%m%d)
           echo "Checking if branch $BRANCH_NAME exists on remote..."
