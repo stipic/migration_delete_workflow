@@ -46,5 +46,5 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           title: "Cleanup: Delete Symfony migrations older than 14 days"
           body: "This PR automatically deletes Symfony migration files older than 14 days."
-          branch: ${{ github.ref_name }}
-          base: main # Adjust if your default branch is different
+          head: ${{ steps.create_branch.outputs.BRANCH_NAME }}
+          base: main # Ensure 'main' is your default branch
