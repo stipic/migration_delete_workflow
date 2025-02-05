@@ -38,6 +38,8 @@ jobs:
           echo "Files before deletion:"
           ls -l ./migrations/Version*
 
+          CHANGES_DETECTED=false
+
           for file in ./migrations/Version*; do
             FILENAME=$(basename "$file")
             TIMESTAMP=${FILENAME//[^0-9]/}
@@ -47,18 +49,22 @@ jobs:
             if [ "$AGE" -gt 14 ]; then
               echo "Deleting file: $file (Age: $AGE days)"
               rm "$file"
+              CHANGES_DETECTED=true
             fi
           done
 
-          # Stage changes, commit and push
-          git add .
-          git status
-          git commit -m "Delete old migrations older than 14 days"
-          
-          # Force push to ensure the branch is updated
-          git push --force
+          # Stage changes if any were made
+          if [ "$CHANGES_DETECTED" = true ]; then
+            git add .
+            git status
+            git commit -m "Delete old migrations older than 14 days"
+            git push
+          else
+            echo "No changes detected, skipping commit and push."
+          fi
 
       - name: Create Pull Request
+        if: success() && steps.delete-migrations.outputs.CHANGES_DETECTED == 'true'
         uses: peter-evans/create-pull-request@v3
         with:
           title: "Delete Old Migrations"
