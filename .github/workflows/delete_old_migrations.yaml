@@ -61,7 +61,6 @@ jobs:
         uses: peter-evans/create-pull-request@v3
         with:
           title: "Delete Old Migrations"
-          commit-message: "Delete Old Migrations"
           body: "This PR deletes migration files older than 14 days."
           branch: "delete-old-migrations-20250205"
           base: "main"
