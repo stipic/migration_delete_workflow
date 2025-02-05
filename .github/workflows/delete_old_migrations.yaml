@@ -28,8 +28,12 @@ jobs:
           MIGRATIONS_DELETED=0
           for file in ./migrations/Version*; do
             FILENAME=$(basename "$file")
-            TIMESTAMP=${FILENAME//[^0-9]/}
-            FILE_DATE=$(date -d "$TIMESTAMP" +%s)
+            TIMESTAMP=${FILENAME//[^0-9]/}  # Remove non-numeric characters to extract timestamp
+            if [[ ! "$TIMESTAMP" =~ ^[0-9]+$ ]]; then
+              echo "Skipping invalid timestamp in file: $file"
+              continue
+            fi
+            FILE_DATE=$TIMESTAMP
             AGE=$(( (CURRENT_DATE - FILE_DATE) / 86400 ))
             if [ "$AGE" -gt 14 ]; then
               rm "$file"
@@ -52,5 +56,6 @@ jobs:
           body: |
             This pull request removes migration files that are older than 14 days.
             🧹 Total migrations deleted: ${{ env.migrations_deleted }}
+            - Files older than 14 days were deleted to keep the repository clean and up-to-date.
           draft: false
           delete-branch: true
