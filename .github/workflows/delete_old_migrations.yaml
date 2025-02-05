@@ -1,61 +1,41 @@
-name: Delete Old Migrations and Open PR
+name: Delete Old Migrations
 
 on:
   schedule:
-    - cron: '0 0 1 * *' # Runs at midnight on the first day of every month
-  workflow_dispatch: # Allow manual triggering as well
+    - cron: "0 0 1 * *" # Runs on the first day of every month at midnight UTC
+  workflow_dispatch:  # Allow manual trigger of the workflow
 
 jobs:
   delete-migrations:
     runs-on: ubuntu-latest
-
     permissions:
-      contents: write
-      pull-requests: write
+      contents: write  # Allow the bot to push changes
+      pull-requests: write  # Allow the bot to create PRs
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Set up PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '8.2'
-        extensions: pdo, pdo_mysql
+      - name: Create a new branch for deleting old migrations
+        run: |
+          # Define the branch name
+          BRANCH_NAME="delete-old-migrations-$(date +%Y%m%d)"
+          git checkout -b $BRANCH_NAME origin/main
+          git push --set-upstream origin $BRANCH_NAME
 
-    - name: Set the branch name
-      run: |
-        BRANCH_NAME=delete-old-migrations-$(date +%Y%m%d)
-        echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+      - name: Delete migrations older than 14 days
+        run: |
+          # Delete migration files older than 14 days in the migrations directory
+          find ./migrations -type f -name "*.php" -mtime +14 -exec rm {} \;
+          git add .
+          git commit -m "Delete old migrations older than 14 days"
+          git push
 
-    - name: Create a new branch based on main
-      run: |
-        git fetch origin main
-        git checkout -b $BRANCH_NAME origin/main
-        git push --set-upstream origin $BRANCH_NAME
-
-    - name: Delete old migration files (older than 14 days)
-      run: |
-        find migrations/ -type f -name "*.php" -mtime +14 -exec rm {} \;
-
-    - name: Stage and commit changes
-      run: |
-        git add migrations/
-        if git diff --cached --quiet; then
-          echo "No migrations to delete. Exiting."
-          exit 0
-        fi
-        git commit -m "Delete migrations older than 14 days"
-
-    - name: Push the new branch to remote
-      run: |
-        git push origin $BRANCH_NAME
-
-    - name: Create Pull Request
-      uses: peter-evans/create-pull-request@v4
-      with:
-        title: "Delete Old Migrations"
-        body: "This PR deletes migration files older than 14 days."
-        head: $BRANCH_NAME
-        base: main
-        draft: false
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v3
+        with:
+          title: "Delete Old Migrations"
+          body: "This PR deletes migration files older than 14 days."
+          base: "main"  # Base branch (main)
+          head: ${{ github.head_ref }}  # This refers to the branch we just created
+          draft: false  # You can change this to `true` if you want the PR to be a draft
