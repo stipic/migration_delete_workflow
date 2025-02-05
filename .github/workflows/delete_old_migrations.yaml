@@ -63,19 +63,15 @@ jobs:
             echo "No changes detected, skipping commit and push."
           fi
 
-      - name: Force a change to trigger PR creation
+      - name: Ensure deletions are staged
         run: |
-          echo "Forcing a minor change to trigger a PR"
-          touch ./migrations/empty-trigger-file.txt
-          git add ./migrations/empty-trigger-file.txt
-          git commit -m "Add empty trigger file to force PR creation"
-          git push
+          git status
+          git diff --stat
 
-      - name: Debug PR Creation
+      - name: Check git diff
         run: |
-          echo "Branch name for PR: ${{ env.BRANCH_NAME }}"
-          echo "Checking if changes were made..."
-          git diff --stat origin/main...$BRANCH_NAME
+          git fetch origin main
+          git diff origin/main..HEAD
 
       - name: Create Pull Request
         if: success()
