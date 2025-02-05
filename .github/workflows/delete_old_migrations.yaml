@@ -53,5 +53,5 @@ jobs:
           title: "Delete Old Migrations"
           body: "This PR deletes migration files older than 14 days."
           base: "main"
-          head: "delete-old-migrations-$(date +%Y%m%d)"
+          branch: "delete-old-migrations-$(date +%Y%m%d)"
           draft: false
