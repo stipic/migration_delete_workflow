@@ -2,15 +2,15 @@ name: Delete Old Migrations
 
 on:
   schedule:
-    - cron: "0 0 1 * *"  # Runs on the first day of every month at midnight UTC
-  workflow_dispatch:  # Allow manual trigger of the workflow
+    - cron: "0 0 1 * *"
+  workflow_dispatch:
 
 jobs:
   delete-migrations:
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # Allow the bot to push changes
-      pull-requests: write  # Allow the bot to create PRs
+      contents: write
+      pull-requests: write
 
     steps:
       - name: Checkout repository
@@ -23,46 +23,35 @@ jobs:
 
       - name: Create a new branch for deleting old migrations
         run: |
-          # Define the branch name
           BRANCH_NAME="delete-old-migrations-$(date +%Y%m%d)"
           git checkout -b $BRANCH_NAME origin/main
           git push --set-upstream origin $BRANCH_NAME
 
       - name: Delete migrations older than 14 days
         run: |
-          # Current date
           CURRENT_DATE=$(date +%s)
 
-          # Find all migration files and loop through them
           for file in ./migrations/Version*; do
-            # Extract the timestamp from the filename (e.g., Version20250204093209 -> 20250204093209)
             FILENAME=$(basename "$file")
-            TIMESTAMP=${FILENAME//[^0-9]/}  # Extract only digits
-            
-            # Convert timestamp to seconds since epoch
+            TIMESTAMP=${FILENAME//[^0-9]/}
             FILE_DATE=$(date -d "$TIMESTAMP" +%s)
-            
-            # Calculate the age of the file in days
             AGE=$(( (CURRENT_DATE - FILE_DATE) / 86400 ))
 
-            # Delete file if older than 14 days
             if [ "$AGE" -gt 14 ]; then
               echo "Deleting file: $file (Age: $AGE days)"
               rm "$file"
             fi
           done
 
-          # Check if there are changes and commit them
           git add .
           git commit -m "Delete old migrations older than 14 days"
           git push
 
-#      - name: Create Pull Request
-#        uses: peter-evans/create-pull-request@v3
-#        with:
-#          title: "Delete Old Migrations"
-#          body: "This PR deletes migration files older than 14 days."
-#          branch: "delete-old-migrations-20250205"
-#          base: "main"
-          #branch: "delete-old-migrations-$(date +%Y%m%d)"
-#          draft: false
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v3
+        with:
+          title: "Delete Old Migrations"
+          body: "This PR deletes migration files older than 14 days."
+          branch: "delete-old-migrations-$(date +%Y%m%d)"
+          base: "main"
+          draft: false
