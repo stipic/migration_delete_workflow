@@ -63,7 +63,7 @@ jobs:
           title: "Delete Old Migrations"
           commit-message: "Delete Old Migrations"
           body: "This PR deletes migration files older than 14 days."
-          branch: ${{ github.ref }}
+          branch: "delete-old-migrations-20250205"
           base: "main"
           #branch: "delete-old-migrations-$(date +%Y%m%d)"
           draft: false
