@@ -63,15 +63,11 @@ jobs:
             echo "No changes detected, skipping commit and push."
           fi
 
-      - name: Ensure deletions are staged
+      - name: Debug PR Creation
         run: |
-          git status
-          git diff --stat
-
-      - name: Check git diff
-        run: |
-          git fetch origin main
-          git diff origin/main..HEAD
+          echo "Branch name for PR: ${{ env.BRANCH_NAME }}"
+          echo "Checking if changes were made..."
+          git diff --stat origin/main...$BRANCH_NAME
 
       - name: Create Pull Request
         if: success()
