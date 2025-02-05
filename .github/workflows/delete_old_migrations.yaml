@@ -24,8 +24,7 @@ jobs:
       - name: Define branch name
         run: |
           export BRANCH_NAME="delete-old-migrations-$(date +%Y%m%d)"
-          echo "Branch name is $BRANCH_NAME"
-          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV  # Set the environment variable
 
       - name: Create a new branch for deleting old migrations
         run: |
@@ -66,5 +65,5 @@ jobs:
           title: "Delete Old Migrations"
           body: "This PR deletes migration files older than 14 days."
           base: "main"  # Base branch (main)
-          head: ${{ env.BRANCH_NAME }}  # Use the branch created dynamically
+          head: ${{ env.BRANCH_NAME }}  # Use the environment variable for the branch name
           draft: false  # Change to `true` if you want the PR to be a draft
